@@ -1,26 +1,49 @@
-#! /home/sandip/anaconda3/bin/python
+#! /usr/bin/env python3.5
 
 # this program calculates the nucleotide composition for the features in a genome
 
 # load the system module
 import sys
 
-## for argument in sys.argv:
-##     print(argument)
-
-## sys.exit()
-
 usage = sys.argv[0] + ": watermelon.fsa watermelon.gff"
 
 if len(sys.argv) < 3:
     print(usage)
-    sys.exit("\nThis script requires both a watermelon.fsa file and a watermelon.gff file\n")
+    sys.exit("\nThis script requires both watermelon FSA file and a watermelon GFF file\n")
 
-watermelon_fsa = sys.argv[1]
-watermelon_gff = sys.argv[2]
-
+watermelon_gff = sys.argv[1]
+watermelon_fsa= sys.argv[2]
 
 #print(gff + "\n" + genome)
+
+#andy = 42
+#print("Main"-1:", andy)
+
+# a function to clean up a DNA sequence
+def clean_seq(input_seq):
+    #print("first time in clean:"+ andy)
+    #andy += 1
+    #print("second time in clean:" + andy)
+    clean = input_seq.upper()
+    clean = clean.replace('N', '')
+    return clean
+
+
+def nuc_freq(sequence, base, sig_digs=2):
+    # Calculate the length of the sequence
+    length = len(sequence)
+    
+    # count the number of this nucleotide
+    count_of_base = count(base)
+
+    # Calculate the base frequencey
+    feq_of_base = count_of_base/length
+    
+    # return the frequency and the length
+    return (length, round(freq_of _base, sig_digs))
+    
+    
+
 
 # declare the file names
 gff_file = 'watermelon.gff'
@@ -51,12 +74,9 @@ for line in fsa_in:
 
 # did we get the genome correctly?
 # print(len(genome))
-
-genome_length = len(genome)
-
+    
 # close the genome file
 fsa_in.close()
-
 
 cds     = ''
 trna    = ''
@@ -84,6 +104,11 @@ for line in gff_in:
 
     # extract this feature from the genome
     fragment = genome[start-1:end]
+    
+   fragment = clean_seq(fragment)
+   # print(clean_seq)
+
+    
 
     if type == 'CDS':
         cds += fragment
@@ -102,64 +127,26 @@ for line in gff_in:
 
     if type == 'tRNA':
         trna += fragment
+#for feature_type in list_of _features:
+types =[cds, intron,misc,repeats,rrna,trna]
+
+# loop over the 4 nucleotides
+dict={
+
+'exon':types[0],'intron':types[1],'misc_feature':types[2],'repeat_region':types[3],'rRNA':types[4],'tRNA':types[5]}
+print("length and nucleotide composition of each feature type")
+for feature_type, seq in dict.items():
+    for nucleotide in ('A','C','G','T'):
+        #calculate the nucleotide composition for each feature
+        (feature_length,feature_comp)=nuc_freq(seq,base=nucleotide,sig_digs=2)
+       
+print(feature_type.ljust(20)+ str(feature_length)+"\t"+nucleotide+ " "+str(feature_comp))
+
 
 # print the output
-# G count of different features
-cds_g_count= cds.count('G')
-intron_g_count= intron.count('G')
-misc_g_count= misc.count('G')
-repeats_g_count= repeats.count('G')
-rrna_g_count= rrna.count('G')
-trna_g_count= trna.count('G')
-
-# C count of different features
-cds_c_count= cds.count('C')
-intron_c_count= intron.count('C')
-misc_c_count= misc.count('C')
-repeats_c_count= repeats.count('C')
-rrna_c_count= rrna.count('C')
-trna_c_count= trna.count('C')
-
-#G+C count of different features
-cds_gc_count = (cds_g_count + cds_c_count)
-intron_gc_count = (intron_g_count + intron_c_count)
-misc_gc_count = (misc_g_count + misc_c_count)
-repeats_gc_count = (repeats_g_count + repeats_c_count)
-rrna_gc_count = (rrna_g_count + rrna_c_count)
-trna_gc_count = (trna_g_count + trna_c_count)
-
-# lenght of differnt features
-length_cds = len(cds)
-length_intron = len(intron)
-length_misc = len(misc)
-length_rrna = len(rrna)
-length_repeats = len(repeats)
-length_trna = len(trna)
-
-# GC ratio of differnt features
-gc_content_cds_ratio = (cds_gc_count/length_cds)*100
-gc_content_intron_ratio = (intron_gc_count/length_intron)*100
-gc_content_misc_ratio = (misc_gc_count/length_misc)*100
-gc_content_rrna_ratio = (rrna_gc_count/length_rrna)*100
-gc_content_repeats_ratio = (repeats_gc_count/length_repeats)*100
-gc_content_trna_ratio = (trna_gc_count/length_trna)*100
-
-#ratio of different features
-CDS_ratio =(length_cds/genome_length)*100
-intron_ratio =(length_intron/genome_length)*100
-misc_ratio =(length_misc/genome_length)*100
-rrna_ratio =(length_rrna/genome_length)*100
-repeats_ratio =(length_repeats/genome_length)*100
-trna_ratio =(length_trna/genome_length)*100
-
-
-print("CDS", "          ", length_cds, "(",round (CDS_ratio,1),"%)",round (gc_content_cds_ratio, 2))
-print("intron","       ", length_intron, "(", round (intron_ratio,1), "%)", round (gc_content_intron_ratio, 2))
-print("misc_feature"," ", length_misc, "(", round (misc_ratio,1), "%)", round (gc_content_misc_ratio, 2))
-print("rRNA","         ", length_rrna,"", "(", round (rrna_ratio,1), "%)", round (gc_content_rrna_ratio, 2))
-print("repeat_regions",length_repeats, "(",round (repeats_ratio,1),"%)", round ( gc_content_repeats_ratio, 2))
-print("tRNA","         ", length_trna,"", "(", round (trna_ratio,1),"%)", round (gc_content_trna_ratio, 2))
-
+#print(cds.count('G'))
+#print(cds.count('C'))
+    
 
 # close the GFF file
 gff_in.close()
