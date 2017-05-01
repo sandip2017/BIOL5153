@@ -4,20 +4,9 @@
 
 # load the system module
 import sys
+import collections
 
-usage = sys.argv[0] + ": watermelon.fsa watermelon.gff"
 
-if len(sys.argv) < 3:
-    print(usage)
-    sys.exit("\nThis script requires both watermelon FSA file and a watermelon GFF file\n")
-
-watermelon_gff = sys.argv[1]
-watermelon_fsa= sys.argv[2]
-
-#print(gff + "\n" + genome)
-
-#andy = 42
-#print("Main"-1:", andy)
 
 # a function to clean up a DNA sequence
 def clean_seq(input_seq):
@@ -29,22 +18,49 @@ def clean_seq(input_seq):
     return clean
 
 
-def nuc_freq(sequence, base, sig_digs=2):
+def nuc_freq(sequence, base1,base2,sig_digs=2):
     # Calculate the length of the sequence
     length = len(sequence)
+
+    # genome covered with the feature
+    genome_cover=(len(sequence)/len(genome))*100
     
     # count the number of this nucleotide
-    count_of_base = count(base)
+    count_of_base1 =sequence.count(base1)
 
-    # Calculate the base frequencey
-    feq_of_base = count_of_base/length
-    
-    # return the frequency and the length
-    return (length, round(freq_of _base, sig_digs))
-    
-    
+    count_of_base2 =sequence.count(base2)
+
+    # calculate the gc content
+    gc_content=((count_of_base1+count_of_base2)/length)*100
+
+    # retun the frequence and the legth
+    return (length,genome_cover,round(gc_content,sig_digs))
+
+# Function to generate complement sequence
+def reverse_compl(dna_seq):
+    replacement1=dna_seq.replace('A','t')
+    replacement2=replacement1.replace('T','a')
+    replacement3=replacement2.replace('C','g')
+    replacement4=replacement3.replace('G','c')
+    return (replacement4.upper())
 
 
+usage = sys.argv[0] + ": watermelon.fsa watermelon.gff"
+
+if len(sys.argv) < 3:
+    print(usage)
+    sys.exit("\nThis script requires both watermelon FSA file and a watermelon GFF file\n")
+
+watermelon_gff = sys.argv[1]
+watermelon_fsa= sys.argv[2]
+
+#print(gff + "\n"  genome)
+
+#andy = 42
+#print("Main"-1:", andy)
+
+
+    
 # declare the file names
 gff_file = 'watermelon.gff'
 fsa_file = 'watermelon.fsa'
@@ -52,6 +68,11 @@ fsa_file = 'watermelon.fsa'
 # open the files for reading
 gff_in = open(gff_file, 'r')
 fsa_in = open(fsa_file, 'r')
+
+
+
+
+
 
 # declare variable that will hold the genome sequence
 genome = ''
@@ -91,12 +112,15 @@ for line in gff_in:
     # remove newline's - could also use strip
     line = line.rstrip('\n')
 
-    types = line.split('; type ')
-    other_type = types[len(types)-1]
+   #types = line.split('; type ')
+    #other_type = types[len(types)-1]
     # print(other_type)
     
     fields = line.split('\t')
     type  = fields[2]
+    strand=field[6]
+
+    #print(gene[0])
     start = int(fields[3])
     end   = int(fields[4])
     
@@ -108,45 +132,56 @@ for line in gff_in:
    fragment = clean_seq(fragment)
    # print(clean_seq)
 
+   if type in feature_sequences:
+        feature_sequences[type] +=fragment
+    else:
+        feature_sequences[type]=fragment
+
+    if type=='CDS':
+        gene_feature=fields[8]
+        gene1=gene_feature.split(';')
+        gene=gene1[0]
+        gene_sequence=genome[start-1:end]
+
+        if strand=='-':
+            #print("Before ")
+            complement_sequence=reverse_compl(gene_sequence)
+            exon_sequences[gene]=complement_sequence
+            #print("After ")
+        else:
+            exon_sequences[gene]=gene_sequence
+        
+    #print (clean)
+    #print(gene[0])
     
-
-    if type == 'CDS':
-        cds += fragment
-
-    if type == 'intron':
-        intron += fragment
-
-    if type == 'misc_feature':
-        misc += fragment
-
-    if type == 'repeat_region':
-        repeats += fragment
-
-    if type == 'rRNA':
-        rrna += fragment
-
-    if type == 'tRNA':
-        trna += fragment
-#for feature_type in list_of _features:
-types =[cds, intron,misc,repeats,rrna,trna]
-
-# loop over the 4 nucleotides
-dict={
-
-'exon':types[0],'intron':types[1],'misc_feature':types[2],'repeat_region':types[3],'rRNA':types[4],'tRNA':types[5]}
-print("length and nucleotide composition of each feature type")
-for feature_type, seq in dict.items():
-    for nucleotide in ('A','C','G','T'):
-        #calculate the nucleotide composition for each feature
-        (feature_length,feature_comp)=nuc_freq(seq,base=nucleotide,sig_digs=2)
-       
-print(feature_type.ljust(20)+ str(feature_length)+"\t"+nucleotide+ " "+str(feature_comp))
-
-
-# print the output
-#print(cds.count('G'))
-#print(cds.count('C'))
-    
-
-# close the GFF file
+#close the GFF file
 gff_in.close()
+    
+
+        
+
+# order the exon sequences
+ordered_exons_sequences = collections.OrderedDict(sorted(exon_sequences.items()))
+    
+for exon, seq in ordered_exons_sequences.items():
+    print(">", exon,"\n",seq)  #print out the exon and the sequences
+
+
+    
+for feature, sequence in feature_sequences.items():
+
+    #calculate the nucleotide composition for each feature
+    (feature_length,cover, feature_comp)=nuc_freq(sequence,base1='C',base2='G',sig_digs=2)
+     
+    print(feature.ljust(20), str(feature_length), "(%1.1f" %cover, "%)", "\t",str(feature_comp)+"%")
+
+
+    
+
+
+
+
+#function for reverse complement
+#function for G+C
+#print/store/build cds for each gene
+#capture the gene name and _ + if _ call reverse function
